@@ -1,6 +1,6 @@
 Based on https://github.com/debezium/debezium-examples/tree/main/tutorial#using-postgres
 # Prerequisites
-  - Make sure docker has atleast 6G memory and 2 cpu set in docker-desktop resources, else containers will keep dying
+  - Make sure docker has atleast 4G memory and 2 cpu set in docker-desktop resources, else containers might keep dying
 # Notes
   - it ll create a docker-vols dir and store volumes data there
   - unless you get a clean start, keep the docker-vols dir clean in your current dir
