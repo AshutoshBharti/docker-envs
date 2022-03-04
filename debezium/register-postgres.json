@@ -9,7 +9,7 @@
         "database.user": "postgres",
         "database.password": "postgres",
         "database.dbname" : "postgres",
-        "database.server.name": "pgdata",
+        "database.server.name": "pgdb",
         "schema.include.list": "inventory"
     }
 }
