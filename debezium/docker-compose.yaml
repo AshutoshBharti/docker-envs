@@ -7,7 +7,7 @@ services:
     hostname: postgres
     container_name: postgres
     ports:
-      - "15432:5432"
+      - 15432:5432
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
@@ -136,9 +136,4 @@ services:
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 2
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 2
       CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
-      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
-      CONNECT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
 
