@@ -1,0 +1,144 @@
+version: '3.1'
+
+services:
+  postgres:
+    image: debezium/postgres:14
+    restart: always
+    hostname: postgres
+    container_name: postgres
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - $PWD/docker-vols/postgres/pgdata:/var/lib/postgresql/data
+
+  zoo1:
+    image: zookeeper:3.7.0
+    restart: always
+    hostname: zoo1
+    container_name: zoo1
+    ports:
+      - 12181:2181
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+    volumes:
+      - $PWD/docker-vols/zoo1/data:/data
+      - $PWD/docker-vols/zoo1/datalog:/datalog
+
+  zoo2:
+    image: zookeeper:3.7.0
+    restart: always
+    hostname: zoo2
+    container_name: zoo2
+    ports:
+      - 22181:2181
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+    volumes:
+      - $PWD/docker-vols/zoo2/data:/data
+      - $PWD/docker-vols/zoo2/datalog:/datalog
+
+  zoo3:
+    image: zookeeper:3.7.0
+    restart: always
+    hostname: zoo3
+    container_name: zoo3
+    ports:
+      - 32181:2181
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181 server.2=zoo2:2888:3888;2181 server.3=zoo3:2888:3888;2181
+    volumes:
+      - $PWD/docker-vols/zoo3/data:/data
+      - $PWD/docker-vols/zoo3/datalog:/datalog
+
+  kafka1:
+    image: debezium/kafka:${DEBEZIUM_VERSION}
+    restart: always
+    hostname: kafka1
+    container_name: kafka1
+    depends_on: ['zoo1', 'zoo2', 'zoo3']
+    ports:
+     - 19092:9092
+     - 19093:9093
+    environment:
+      NODE_ID: 1
+      ZOOKEEPER_CONNECT: zoo1:2181,zoo2:2181,zoo3:2181
+      KAFKA_ADVERTISED_HOST_NAME: kafka1
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+
+    volumes:
+      - $PWD/docker-vols/kafka1/data:/kafka/data
+      - $PWD/docker-vols/kafka1/logs:/kafka/logs
+      - $PWD/docker-vols/kafka1/config:/kafka/config
+  kafka2:
+    image: debezium/kafka:${DEBEZIUM_VERSION}
+    restart: always
+    hostname: kafka2
+    container_name: kafka2
+    depends_on: ['zoo1', 'zoo2', 'zoo3']
+    ports:
+      - 29092:9092
+      - 29093:9093
+    environment:
+      NODE_ID: 2
+      ZOOKEEPER_CONNECT: zoo1:2181,zoo2:2181,zoo3:2181
+      KAFKA_ADVERTISED_HOST_NAME: kafka2
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+    volumes:
+      - $PWD/docker-vols/kafka2/data:/kafka/data
+      - $PWD/docker-vols/kafka2/logs:/kafka/logs
+      - $PWD/docker-vols/kafka2/config:/kafka/config
+  kafka3:
+    image: debezium/kafka:${DEBEZIUM_VERSION}
+    restart: always
+    hostname: kafka3
+    container_name: kafka3
+    depends_on: ['zoo1', 'zoo2', 'zoo3']
+    ports:
+      - 39092:9092
+      - 39093:9093
+    environment:
+      NODE_ID: 3
+      ZOOKEEPER_CONNECT: zoo1:2181,zoo2:2181,zoo3:2181
+      KAFKA_ADVERTISED_HOST_NAME: kafka3
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092
+    volumes:
+      - $PWD/docker-vols/kafka3/data:/kafka/data
+      - $PWD/docker-vols/kafka3/logs:/kafka/logs
+      - $PWD/docker-vols/kafka3/config:/kafka/config
+
+
+
+  connect:
+    image: debezium/connect:${DEBEZIUM_VERSION}
+    hostname: connect
+    container_name: connect
+    depends_on: ['zoo1', 'zoo2', 'zoo3', 'kafka1', 'kafka2', 'kafka3', 'postgres']
+    ports:
+      - 18083:8083
+    environment:
+      BOOTSTRAP_SERVERS: kafka1:9092,kafka2:9092,kafka3:9092
+      GROUP_ID: dbz-connect
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
+      CONFIG_STORAGE_TOPIC: dbz_connect_configs
+      OFFSET_STORAGE_TOPIC: dbz_connect_offsets
+      STATUS_STORAGE_TOPIC: dbz_connect_statuses
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 2
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CONNECT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+
